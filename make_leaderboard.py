@@ -126,13 +126,18 @@ def render_html(people, leader_points=None):
         )
     rows = "\n".join(blocks)
     updated = datetime.datetime.now(TZ).strftime("%Y-%m-%d %H:%M")
-    leader = f" · Totalledaren har {H.escape(leader_points)} p" if leader_points else ""
     total = max((len(p.get("matches", [])) for p in people), default=0)
     played = max(
         (sum(1 for m in p.get("matches", []) if m != "pending") for p in people),
         default=0,
     )
-    progress = f" · {played} av {total} spelade" if total else ""
+    # Rad 2 i underrubriken: totalledare + matcher spelade (egen rad = snyggare).
+    parts = []
+    if leader_points:
+        parts.append(f"Totalledaren har {H.escape(leader_points)} p")
+    if total:
+        parts.append(f"{played} av {total} spelade")
+    subline2 = f"<br>{' · '.join(parts)}" if parts else ""
     return f"""<!DOCTYPE html>
 <html lang="sv">
 <head>
@@ -184,7 +189,7 @@ def render_html(people, leader_points=None):
   <div id="card">
     <div class="head">
       <h1>{H.escape(TITLE)}</h1>
-      <div class="sub">Uppdaterad {updated}{leader}{progress}</div>
+      <div class="sub">Uppdaterad {updated}{subline2}</div>
     </div>
 {rows}
     <div class="foot">
