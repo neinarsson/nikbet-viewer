@@ -170,7 +170,7 @@ def render_html(people, leader_points=None):
   .track span {{ display:inline-block; vertical-align:top; width:{seg_w}; height:10px;
                 border-right:1px solid #fff; }}
   .track span:nth-child(6n) {{ border-right-color:#b7c4d0; }}
-  .track span:last-child {{ border-right:0; }}
+  .track span:last-child {{ border-right-color:transparent; }}
   .track .hit {{ background:var(--hit); }}
   .track .miss {{ background:var(--miss); }}
   .track .pending {{ background:transparent; }}
@@ -212,25 +212,10 @@ def render_html(people, leader_points=None):
 <script>
 async function makeBlob() {{
   const node = document.getElementById('card');
-  const scale = 2;
-  const src = await html2canvas(node, {{scale, backgroundColor: null}});
-  // html2canvas klipper inte kortets rundade hörn själv (ritar en hel vit
-  // fyrkant). Klipp därför hörnen till transparenta här – samma storlek.
-  const w = src.width, h = src.height;
-  const rr = Math.min(16 * scale, w / 2, h / 2);
-  const out = document.createElement('canvas');
-  out.width = w; out.height = h;
-  const ctx = out.getContext('2d');
-  ctx.beginPath();
-  ctx.moveTo(rr, 0);
-  ctx.arcTo(w, 0, w, h, rr);
-  ctx.arcTo(w, h, 0, h, rr);
-  ctx.arcTo(0, h, 0, 0, rr);
-  ctx.arcTo(0, 0, w, 0, rr);
-  ctx.closePath();
-  ctx.clip();
-  ctx.drawImage(src, 0, 0);
-  return await new Promise(r => out.toBlob(r, 'image/png'));
+  // backgroundColor: null → transparenta hörn. (Vissa appar/editorer visar
+  // transparent som vitt, men själva filen är transparent.)
+  const canvas = await html2canvas(node, {{scale: 2, backgroundColor: null}});
+  return await new Promise(r => canvas.toBlob(r, 'image/png'));
 }}
 document.getElementById('share').addEventListener('click', async () => {{
   try {{
