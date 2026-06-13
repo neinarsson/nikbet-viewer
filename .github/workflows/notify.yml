@@ -1,0 +1,79 @@
+# Bevakar topplistan på fotbollstips.nikbet.com var 30:e minut och skriver en
+# kommentar i ett GitHub-issue ("📊 Topplistan – notiser") när ert gängs
+# ställning faktiskt ändrats. Du får då en vanlig GitHub-notis i mobilen.
+#
+# SITE_URL länkas i varje notis – peka på den deployade Cloudflare-workern.
+name: Topplista-notiser
+
+on:
+  schedule:
+    - cron: "*/30 * * * *" # var 30:e minut (UTC)
+  workflow_dispatch: {} # går att köra manuellt från Actions-fliken
+
+# Behövs för att committa state.json och kommentera i issue.
+permissions:
+  contents: write
+  issues: write
+
+# Kör aldrig två körningar samtidigt (undviker krockande commits).
+concurrency:
+  group: notify
+  cancel-in-progress: false
+
+env:
+  SITE_URL: "https://nikbet-viewer.niklas-einarsson.workers.dev"
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checka ut repot
+        uses: actions/checkout@v4
+
+      - name: Bygg topplista och upptäck ändring
+        env:
+          # public/ är byggoutput (gitignorerad). Jämför istället mot den lilla
+          # committade state-filen från förra körningen så detektering består.
+          PREV_STATE_FILE: .notify-state.json
+        run: python3 make_leaderboard.py
+
+      - name: Avgör om ställningen ändrats
+        id: check
+        run: echo "changed=$(cat changed.txt)" >> "$GITHUB_OUTPUT"
+
+      - name: Posta notis i issue
+        if: steps.check.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          TITLE="📊 Topplistan – notiser"
+          SUMMARY="$(cat public/summary.txt)"
+          BODY="$(printf '%s\n\n🔗 Öppna sidan och dela: %s\n' "$SUMMARY" "$SITE_URL")"
+
+          # Hitta befintligt öppet issue med exakt titel, annars skapa ett.
+          NUM="$(gh issue list --state open --search "$TITLE in:title" \
+                  --json number,title \
+                  --jq "map(select(.title == \"$TITLE\")) | first | .number // empty")"
+          if [ -z "$NUM" ]; then
+            NUM="$(gh issue create --title "$TITLE" \
+                    --body "Notiser när vårt gängs ställning ändras." \
+                    | grep -oE '[0-9]+$')"
+          fi
+
+          gh issue comment "$NUM" --body "$BODY"
+
+      - name: Spara ny ställning (state) i repot
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          # Persistera bara hash/tidsstämpel så nästa körning kan jämföra.
+          cp public/state.json .notify-state.json
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .notify-state.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Uppdatera topplistans state efter ändring"
+            git push
+          fi
