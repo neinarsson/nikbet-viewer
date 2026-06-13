@@ -108,17 +108,14 @@ def extract(html, selected):
 
 
 def render_html(people, leader_points=None):
-    medals = ("🥇", "🥈", "🥉")
     blocks = []
-    for i, p in enumerate(people):
+    for p in people:
         boxes = "".join(f'<span class="{m}"></span>' for m in p.get("matches", []))
-        medal = f'<span class="medal">{medals[i]}</span>' if i < len(medals) else ""
-        cls = "person lead" if i == 0 else "person"
         blocks.append(
-            f"""      <div class="{cls}">
+            f"""      <div class="person">
         <div class="prow">
           <span class="rank">{H.escape(p['pos'])}</span>
-          <span class="name">{medal}{H.escape(p['name'])}</span>
+          <span class="name">{H.escape(p['name'])}</span>
           <span class="dif">{H.escape(p['skilje'])}</span>
           <span class="pts">{H.escape(p['points'])}<i>p</i></span>
         </div>
@@ -161,12 +158,10 @@ def render_html(people, leader_points=None):
   .head .sub {{ font-size:11.5px; opacity:.92; margin-top:4px; line-height:1.5; }}
   .person {{ padding:7px 14px 8px; }}
   .person + .person {{ border-top:1px solid var(--line); }}
-  .person.lead {{ background:linear-gradient(90deg,rgba(43,159,230,.08),rgba(43,159,230,0)); }}
   .prow {{ display:flex; align-items:baseline; gap:8px; }}
   .rank {{ width:26px; flex:none; text-align:right; font-weight:800; font-size:13px; color:var(--blue); }}
   .name {{ flex:1; min-width:0; font-weight:700; font-size:13.5px;
           white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
-  .medal {{ margin-right:3px; }}
   .dif {{ flex:none; font-size:10px; color:var(--muted); }}
   .pts {{ flex:none; font-weight:800; font-size:15px; }}
   .pts i {{ font-style:normal; font-size:10px; font-weight:600; color:var(--muted); margin-left:1px; }}
