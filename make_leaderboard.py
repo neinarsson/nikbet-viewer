@@ -50,6 +50,12 @@ def strip_tags(s: str) -> str:
     return re.sub(r"<[^>]+>", "", s)
 
 
+def first_name(name: str) -> str:
+    # Familjegäng – vi visar bara förnamnet. Matchningen mot källan sker dock
+    # alltid på det fullständiga namnet (se extract/names.txt).
+    return name.split()[0] if name else name
+
+
 def load_selected(path):
     names = []
     with open(path, encoding="utf-8") as f:
@@ -115,7 +121,7 @@ def render_html(people, leader_points=None):
             f"""      <div class="person">
         <div class="prow">
           <span class="rank">{H.escape(p['pos'])}</span>
-          <span class="name">{H.escape(p['name'])}</span>
+          <span class="name">{H.escape(first_name(p['name']))}</span>
           <span class="dif">{H.escape(p['skilje'])}</span>
           <span class="pts">{H.escape(p['points'])}<i>p</i></span>
         </div>
@@ -242,7 +248,7 @@ document.getElementById('share').addEventListener('click', async () => {{
 def make_summary(people):
     lines = [TITLE, ""]
     for p in people:
-        lines.append(f"{p['pos']}. {p['name']} — {p['points']} p ({p['skilje']})")
+        lines.append(f"{p['pos']}. {first_name(p['name'])} — {p['points']} p ({p['skilje']})")
     return "\n".join(lines) + "\n"
 
 
