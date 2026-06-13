@@ -1,90 +1,68 @@
-# nikbet-view
+# nikbet-viewer
 
 Bevakar [fotbollstips.nikbet.com](https://fotbollstips.nikbet.com) och visar en
-**kondenserad topplista för ert eget gäng** – plus en notis när den ändrats så
-att du kan dela den till er WhatsApp-grupp med ett tryck.
+**kondenserad topplista för vårt eget gäng** – med en matchmatris per person och
+en knapp för att dela en bild till WhatsApp – plus en notis när ställningen
+ändrats.
 
-Eftersom repot är **privat** (där GitHub Pages inte är gratis) hostas sidan på
-**Cloudflare**, och **GitHub Actions** sköter notiserna.
+**Live:** https://neinarsson.github.io/nikbet-viewer/
 
-## Del 1 – Publicera sidan (Cloudflare Worker)
+## Så funkar det
 
-En [Cloudflare Worker](worker.js) hämtar källan live vid varje besök och
-serverar:
+Källsidan blockerar serverhämtningar från t.ex. Cloudflares IP-adresser, så sidan
+kan inte hämtas live i en webbläsare/worker (då blir tabellen tom). Istället
+hämtar en **GitHub Actions-runner** (som inte blockeras) källan med jämna
+mellanrum, bygger en färdig statisk sida och publicerar den på **GitHub Pages**.
 
-| Adress | Innehåll |
+Eftersom ställningen bara ändras när matchresultat kommer in är detta i praktiken
+alltid aktuellt.
+
+Allt sköts av workflowet [`.github/workflows/pages.yml`](.github/workflows/pages.yml):
+
+1. **Bygger** sidan med [`make_leaderboard.py`](make_leaderboard.py) (ren Python,
+   inga beroenden).
+2. **Publicerar** den till GitHub Pages.
+3. **Postar en notis** i ett issue (`📊 Topplistan – notiser`) när vårt gängs
+   ställning ändrats, med en länk till sidan.
+
+Körs **var 30:e minut**, vid varje push till `main`, och kan startas manuellt
+(Actions-fliken → *Publicera topplista* → *Run workflow*).
+
+Ändringsdetektering sker mot förra publicerade `state.json` (via `PREV_STATE_URL`),
+så inget behöver committas tillbaka till repot.
+
+## Sidan visar
+
+| Del | Innehåll |
 | --- | --- |
-| `/` | **Kondenserad topplista** för ert gäng + **"Dela till WhatsApp"-knapp** |
-| `/full` | Hela originalsidan, men med bara era personer i topplistan |
+| Rubrik | Titel + senaste uppdatering (svensk tid) + totalledarens poäng |
+| Per person | Placering, namn, skilje (mål) och poäng |
+| Matchmatris | 72 rutor per person – 🟩 grön = rätt, 🟥 röd = fel, ⬜ transparent = ej spelad |
+| Dela-knapp | Skapar en **bild** av topplistan på telefonen och delar den (eller laddar ned den på desktop) |
 
-Sidan är alltid live (inget bygge med intervall) och funkar med privat repo.
-
-### Deploya från mobilen (ett tryck)
-
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/neinarsson/nikbet-view)
-
-1. Tryck på knappen, logga in på Cloudflare (eller skapa **gratiskonto**).
-2. Godkänn kopplingen till GitHub – ge åtkomst till repot `nikbet-view`.
-3. Tryck **Deploy**.
-
-Du får en adress som `https://nikbet-view.<ditt-konto>.workers.dev/`. Klart.
-
-### …eller från en dator
-
-```bash
-npm i -g wrangler
-wrangler login
-wrangler deploy
-```
-
-## Del 2 – Notiser vid ändring (GitHub Actions)
-
-Workflowet [`notify.yml`](.github/workflows/notify.yml) kollar källan **var 30:e
-minut**. **Bara när er topplista faktiskt ändrats** (placering/poäng) skriver
-det en kommentar i ett GitHub-issue ("📊 Topplistan – notiser") med den nya
-ställningen. Du får då en vanlig GitHub-notis i mobilen → öppna sidan → **Dela**.
-
-Notisen innehåller även ställningen som text, så du kan kopiera rakt in i
-WhatsApp om du vill.
-
-> När du har din Cloudflare-adress: fyll i den i `SITE_URL` överst i
-> `notify.yml` så länkas sidan direkt i varje notis. (Säg till mig så fixar
-> jag det åt dig.)
-
-Körningarna drar GitHub Actions-minuter (~1 400/mån, gratistaket är 2 000).
+Bilden skapas lokalt i din webbläsare (html2canvas + Web Share), så inget extra
+behöver driftas och inget bryter mot WhatsApps villkor.
 
 ## Välja vilka som visas
 
-Två ställen (de styr olika delar):
+Ändra [`names.txt`](names.txt) – ett namn per rad, `#` för kommentar. Matchningen
+är skiftlägesokänslig men namnet måste annars stavas exakt som på
+fotbollstips.nikbet.com (alla tillgängliga namn finns kommenterade i filen).
+Pusha till `main` så bygger och publicerar workflowet om sidan automatiskt.
 
-- **Sidan:** listan `NAMES` överst i [`worker.js`](worker.js) – pusha så
-  bygger Cloudflare om automatiskt.
-- **Notiserna:** [`names.txt`](names.txt) – ett namn per rad, `#` för kommentar.
-
-Håll dem i synk. Matchningen är skiftlägesokänslig men namnet måste annars
-stavas exakt som på originalsidan (alla tillgängliga namn finns kommenterade i
-`names.txt`). *Bo Einarsson* finns två gånger i källan – båda raderna visas.
-
-### "Dela till WhatsApp"
-
-Knappen skapar en **bild** av topplistan direkt på din telefon och öppnar
-delningsmenyn – välj er grupp så postas bilden. Bilden skapas lokalt i mobilen,
-så inget bryter mot WhatsApps villkor och inget extra behöver driftas.
+> *Bo Einarsson* finns två gånger i källan – båda raderna visas.
 
 ## Köra/testa lokalt
 
 ```bash
-python3 make_leaderboard.py     # skriver out/index.html, state.json, summary.txt
+python3 make_leaderboard.py      # skriver public/index.html, state.json, summary.txt
 ```
 
 Miljövariabler: `SOURCE_URL`, `NAMES_FILE`, `OUTPUT_DIR`, `TITLE`,
-`PREV_STATE_FILE` (lokal fil) eller `PREV_STATE_URL` för ändringsdetektering.
-Inga beroenden – endast Python 3. Workern är ren JavaScript.
+`PREV_STATE_FILE` (lokal fil) eller `PREV_STATE_URL` (publik URL) för
+ändringsdetektering. Endast Python 3 krävs.
 
-## Hur det fungerar
+## Engångsinställningar i GitHub
 
-Både workern och `make_leaderboard.py` plockar ut era personers rad ur
-topplistan (placering – inklusive delade placeringar via carry-forward – namn,
-poäng, skilje). Workern renderar och serverar sidan live; `make_leaderboard.py`
-beräknar en hash av ställningen och jämför mot förra körningens `state.json` för
-att avgöra om något ändrats och en notis ska skickas.
+- **Settings → Pages → Source:** `GitHub Actions`.
+- **Settings → Actions:** tillåt actions att köra.
