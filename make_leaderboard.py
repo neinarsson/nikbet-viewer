@@ -113,15 +113,13 @@ def render_html(people, leader_points=None):
         boxes = "".join(f'<span class="{m}"></span>' for m in p.get("matches", []))
         blocks.append(
             f"""      <div class="person">
-        <div class="prow">
-          <span class="pos">{H.escape(p['pos'])}</span>
-          <div class="who">
-            <span class="name">{H.escape(p['name'])}</span>
-            <span class="dif">{H.escape(p['skilje'])}</span>
-          </div>
-          <span class="pts">{H.escape(p['points'])} p</span>
+        <span class="pos">{H.escape(p['pos'])}</span>
+        <div class="who">
+          <span class="name">{H.escape(p['name'])}</span>
+          <span class="dif">{H.escape(p['skilje'])}</span>
         </div>
         <div class="grid">{boxes}</div>
+        <span class="pts">{H.escape(p['points'])} p</span>
       </div>"""
         )
     rows = "\n".join(blocks)
@@ -156,19 +154,19 @@ def render_html(people, leader_points=None):
   .head {{ background:linear-gradient(135deg,#42b4fb,#1e84d8); color:#fff; padding:16px 18px; }}
   .head h1 {{ font-size:18px; margin:0 0 4px; line-height:1.25; }}
   .head .sub {{ font-size:12px; opacity:.9; }}
-  .person {{ padding:7px 14px; border-bottom:1px solid #eef2f5; }}
+  .person {{ display:flex; align-items:center; gap:8px; padding:5px 12px; border-bottom:1px solid #eef2f5; }}
   .person:last-of-type {{ border-bottom:0; }}
-  .prow {{ display:flex; align-items:baseline; gap:8px; }}
-  .pos {{ width:30px; flex:none; font-weight:700; color:var(--blue); font-size:14px; }}
-  .who {{ flex:1; min-width:0; display:flex; align-items:baseline; gap:8px; }}
-  .name {{ font-weight:600; font-size:14px; }}
-  .dif {{ font-size:10px; color:#8a98a5; }}
-  .pts {{ flex:none; font-weight:700; font-size:14px; white-space:nowrap; }}
-  .grid {{ margin-top:4px; display:flex; flex-wrap:wrap; gap:1px; }}
-  .grid span {{ width:8px; height:8px; flex:none; border-radius:1px; }}
+  .pos {{ width:24px; flex:none; text-align:right; font-weight:700; color:var(--blue); font-size:13px; }}
+  .who {{ width:116px; flex:none; min-width:0; }}
+  .name {{ display:block; font-weight:600; font-size:13px; line-height:1.15;
+          white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
+  .dif {{ font-size:9px; color:#8a98a5; }}
+  .grid {{ flex:1; display:flex; flex-wrap:wrap; gap:1px; align-content:center; }}
+  .grid span {{ width:6px; height:6px; flex:none; border-radius:1px; }}
   .grid .hit {{ background:var(--hit); }}
   .grid .miss {{ background:var(--miss); }}
   .grid .pending {{ background:transparent; border:1px solid #d8e2ec; }}
+  .pts {{ width:30px; flex:none; text-align:right; font-weight:700; font-size:13px; }}
   .foot {{ padding:11px 16px; font-size:11px; color:#8a98a5;
           display:flex; flex-wrap:wrap; align-items:center; gap:10px; }}
   .foot .lg {{ display:inline-flex; align-items:center; gap:4px; }}
@@ -208,8 +206,14 @@ def render_html(people, leader_points=None):
 async function makeBlob() {{
   const node = document.getElementById('card');
   // backgroundColor: null = transparent utanför kortets rundade hörn.
-  const canvas = await html2canvas(node, {{scale: 2, backgroundColor: null}});
-  return await new Promise(r => canvas.toBlob(r, 'image/png'));
+  const src = await html2canvas(node, {{scale: 2, backgroundColor: null}});
+  // Padda till kvadrat (transparent) så WhatsApp visar HELA bilden – höga
+  // porträttbilder beskärs annars i chattens förhandsvisning.
+  const size = Math.max(src.width, src.height);
+  const out = document.createElement('canvas');
+  out.width = size; out.height = size;
+  out.getContext('2d').drawImage(src, (size - src.width) / 2, (size - src.height) / 2);
+  return await new Promise(r => out.toBlob(r, 'image/png'));
 }}
 document.getElementById('share').addEventListener('click', async () => {{
   try {{
