@@ -145,16 +145,16 @@ def render_html(people, leader_points=None):
   .head {{ background:var(--blue); color:#fff; padding:16px 18px; }}
   .head h1 {{ font-size:18px; margin:0 0 4px; line-height:1.25; }}
   .head .sub {{ font-size:12px; opacity:.9; }}
-  .person {{ padding:11px 16px; border-bottom:1px solid #eef2f5; }}
+  .person {{ padding:7px 14px; border-bottom:1px solid #eef2f5; }}
   .person:last-of-type {{ border-bottom:0; }}
-  .prow {{ display:flex; align-items:center; gap:10px; }}
-  .pos {{ width:34px; flex:none; font-weight:700; color:var(--blue); font-size:15px; }}
-  .who {{ flex:1; min-width:0; display:flex; flex-direction:column; }}
-  .name {{ font-weight:600; font-size:15px; }}
-  .dif {{ font-size:11px; color:#8a98a5; margin-top:1px; }}
-  .pts {{ flex:none; font-weight:700; font-size:15px; white-space:nowrap; }}
-  .grid {{ margin-top:8px; padding-left:44px; display:flex; flex-wrap:wrap; gap:3px; }}
-  .grid span {{ width:14px; height:14px; flex:none; border-radius:2px; }}
+  .prow {{ display:flex; align-items:baseline; gap:8px; }}
+  .pos {{ width:30px; flex:none; font-weight:700; color:var(--blue); font-size:14px; }}
+  .who {{ flex:1; min-width:0; display:flex; align-items:baseline; gap:8px; }}
+  .name {{ font-weight:600; font-size:14px; }}
+  .dif {{ font-size:10px; color:#8a98a5; }}
+  .pts {{ flex:none; font-weight:700; font-size:14px; white-space:nowrap; }}
+  .grid {{ margin-top:4px; display:flex; flex-wrap:wrap; gap:1px; }}
+  .grid span {{ width:8px; height:8px; flex:none; border-radius:1px; }}
   .grid .hit {{ background:var(--hit); }}
   .grid .miss {{ background:var(--miss); }}
   .grid .pending {{ background:transparent; border:1px solid #d8e2ec; }}
