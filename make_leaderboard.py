@@ -159,7 +159,7 @@ def render_html(people, leader_points=None):
   .person {{ padding:4px 14px 5px; }}
   .person + .person {{ border-top:1px solid var(--line); }}
   .prow {{ display:flex; align-items:baseline; gap:8px; }}
-  .rank {{ width:26px; flex:none; text-align:right; font-weight:800; font-size:13px; color:var(--blue); }}
+  .rank {{ width:28px; flex:none; text-align:left; font-weight:800; font-size:13px; color:var(--blue); }}
   .name {{ flex:1; min-width:0; font-weight:700; font-size:13px;
           white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
   .dif {{ flex:none; font-size:10px; color:var(--muted); }}
