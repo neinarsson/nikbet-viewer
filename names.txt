@@ -1,0 +1,129 @@
+# Personer som ska visas i topplistan (första tabellen).
+# Ett namn per rad. Rader som börjar med # ignoreras.
+#
+# Ta bort/lägg till rader för att ändra vilka som visas. Matchningen är
+# skiftlägesokänslig men namnet måste annars stavas exakt som på
+# fotbollstips.nikbet.com (se den kommenterade listan längst ned).
+#
+# OBS: "Bo Einarsson" finns två gånger i källan – båda raderna visas.
+
+# === Valda ===
+Ellen Einarsson
+Anton Einarsson
+Niklas Einarsson
+Johanna Einarsson
+Bo Einarsson
+Emil Fransson
+Sven Möller
+
+# === Övriga tillgängliga namn (avkommentera för att lägga till) ===
+# Edvin Sundström
+# Robert Stewart
+# Hampus Lippu
+# Mikael Göransson
+# Bo Nilsson
+# Kennet Larsson
+# Fidan Bilalli
+# Rikard Johelid
+# Andreas Mellstedt
+# Sandra Gylling
+# Jan "Pekka" Nätynki
+# Jon Åsander
+# Anders Myrling
+# Jöran Johansson
+# Lars Hermansson
+# Christina Appelkvist
+# Lars-Erik Pedersén
+# Kjell Ekström
+# Henrik Kuusela
+# Lennart Ståhl
+# Peder Andersson
+# Sanna Pihlajamäki Blomgren
+# Oskar Kuusela #2
+# Mats Tolfsson
+# Ulf Appel
+# Oskar Kuusela
+# Tomas Appelkvist
+# Gisela Jägebratt
+# Freya "The" Dog
+# Alfred Appelkvist
+# Carita Appelkvist
+# Sven-Erik Adolfsson
+# Anton Larsson
+# Maja Kuusela
+# Carl Krii
+# Thomas Äärlaht
+# Isak Dahlström
+# Peter Fridolf
+# Patrik Lövhage
+# Pauli Dalviken
+# Leo Bornefalk
+# Stefan Ovestrand
+# Erik Andersson
+# Tilda Hallberg
+# Thomas Herbertsson
+# Jonathan Norén
+# Åsa Post
+# Mikko Virkkunen
+# Cecilia Bothin
+# Kjell Arnesson
+# Rikard Gylling
+# Lovisa Appelkvist
+# Pontus Ränk
+# Janne Espling
+# Kjell Storberg
+# Tilde Kuusela
+# Anna Moberg
+# Sandra Kuusela
+# Örjan Månsson
+# Joel Post
+# Dogga DugaXhin
+# Tommy Äärlaht
+# Allan Sommarblad
+# Linus Kulnef
+# Paul Appelkvist
+# Monica Thorén
+# Anders Glansk
+# Anders Lippu
+# Pernilla Lippu
+# Jacob Glansk
+# Eva-Li Nätynki Bodén
+# Bengt Henriksson
+# Joakim Zackrisson
+# Marcus Johansson
+# Fredrik Green
+# Viggo Vestre
+# AleXander Elmström
+# Noelia Hallberg Krii
+# Rikard Vestre
+# Oscar Appelkvist
+# Ilpo Lassila
+# Zulfo Husovic
+# Emma Kuusela
+# Robert Mortensson
+# Albin Larsson
+# Pontus Mertala
+# Jessica Sääf
+# Johan Krii
+# Martin Movitz
+# Anders Nilsson
+# Anette Krii
+# Lena Nilsdotter
+# Fredrik Kuusela
+# Tommi Wilkman
+# Katarina Borg
+# Johan Magnusson
+# Nik Froggett
+# Johan Hansson
+# Medi Dresevic
+# Gustav Krii
+# Jens Persson
+# Niklas Borssén
+# Per Ambjörnsson
+# Adam Karlsson
+# Hasse Ekblom
+# AleXander Mertala
+# Larry Karlsson
+# Torbjörn Georgsson
+# Jonas Persson
+# Peter Mertala

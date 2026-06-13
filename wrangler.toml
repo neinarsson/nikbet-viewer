@@ -1,0 +1,6 @@
+name = "nikbet-viewer"
+main = "worker.js"
+compatibility_date = "2026-06-01"
+
+# Deploy:  wrangler deploy
+# Lokalt:  wrangler dev   (öppna http://localhost:8787)

@@ -1,0 +1,8 @@
+# Byggd output – genereras av build.py / GitHub Actions
+public/
+
+# Byggartefakt från make_leaderboard.py
+changed.txt
+
+# make_leaderboard.py temp-output
+out/
