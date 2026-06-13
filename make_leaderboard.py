@@ -170,6 +170,7 @@ def render_html(people, leader_points=None):
   .track span {{ display:inline-block; vertical-align:top; width:{seg_w}; height:10px;
                 border-right:1px solid #fff; }}
   .track span:nth-child(6n) {{ border-right-color:#b7c4d0; }}
+  .track span:last-child {{ border-right:0; }}
   .track .hit {{ background:var(--hit); }}
   .track .miss {{ background:var(--miss); }}
   .track .pending {{ background:transparent; }}
