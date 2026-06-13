@@ -108,18 +108,21 @@ def extract(html, selected):
 
 
 def render_html(people, leader_points=None):
+    medals = ("🥇", "🥈", "🥉")
     blocks = []
-    for p in people:
+    for i, p in enumerate(people):
         boxes = "".join(f'<span class="{m}"></span>' for m in p.get("matches", []))
+        medal = f'<span class="medal">{medals[i]}</span>' if i < len(medals) else ""
+        cls = "person lead" if i == 0 else "person"
         blocks.append(
-            f"""      <div class="person">
-        <span class="pos">{H.escape(p['pos'])}</span>
-        <div class="who">
-          <span class="name">{H.escape(p['name'])}</span>
+            f"""      <div class="{cls}">
+        <div class="prow">
+          <span class="rank">{H.escape(p['pos'])}</span>
+          <span class="name">{medal}{H.escape(p['name'])}</span>
           <span class="dif">{H.escape(p['skilje'])}</span>
+          <span class="pts">{H.escape(p['points'])}<i>p</i></span>
         </div>
-        <div class="grid">{boxes}</div>
-        <span class="pts">{H.escape(p['points'])} p</span>
+        <div class="track">{boxes}</div>
       </div>"""
         )
     rows = "\n".join(blocks)
@@ -136,6 +139,7 @@ def render_html(people, leader_points=None):
     if total:
         parts.append(f"{played} av {total} spelade")
     subline2 = f"<br>{' · '.join(parts)}" if parts else ""
+    seg_w = f"calc(100% / {total})" if total else "0"
     return f"""<!DOCTYPE html>
 <html lang="sv">
 <head>
@@ -145,41 +149,46 @@ def render_html(people, leader_points=None):
 <title>{H.escape(TITLE)}</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
-  :root {{ --blue:#33ABF9; --hit:#22c55e; --miss:#ef4444; }}
+  :root {{ --blue:#2b9fe6; --hit:#1bb265; --miss:#ec4d4d; --pending:#e7ecf1;
+          --ink:#15212b; --muted:#8a98a5; --line:#eef2f5; }}
   * {{ box-sizing:border-box; }}
   body {{ font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-         margin:0; background:#eef3f7; color:#1a1a1a; padding:16px; }}
-  .wrap {{ max-width:540px; margin:0 auto; }}
-  #card {{ background:#fff; border-radius:14px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,.12); }}
-  .head {{ background:linear-gradient(135deg,#42b4fb,#1e84d8); color:#fff; padding:16px 18px; }}
-  .head h1 {{ font-size:18px; margin:0 0 4px; line-height:1.25; }}
-  .head .sub {{ font-size:12px; opacity:.9; }}
-  .person {{ display:flex; align-items:center; gap:8px; padding:5px 12px; border-bottom:1px solid #eef2f5; }}
-  .person:last-of-type {{ border-bottom:0; }}
-  .pos {{ width:24px; flex:none; text-align:right; font-weight:700; color:var(--blue); font-size:13px; }}
-  .who {{ width:116px; flex:none; min-width:0; }}
-  .name {{ display:block; font-weight:600; font-size:13px; line-height:1.15;
+         margin:0; background:#e9eef3; color:var(--ink); padding:16px; }}
+  .wrap {{ max-width:520px; margin:0 auto; }}
+  #card {{ background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 6px 22px rgba(20,40,60,.13); }}
+  .head {{ background:linear-gradient(135deg,#3aa9f0,#1577c7); color:#fff; padding:14px 16px; }}
+  .head h1 {{ font-size:17px; font-weight:800; margin:0; line-height:1.2; }}
+  .head .sub {{ font-size:11.5px; opacity:.92; margin-top:4px; line-height:1.5; }}
+  .person {{ padding:7px 14px 8px; }}
+  .person + .person {{ border-top:1px solid var(--line); }}
+  .person.lead {{ background:linear-gradient(90deg,rgba(43,159,230,.08),rgba(43,159,230,0)); }}
+  .prow {{ display:flex; align-items:baseline; gap:8px; }}
+  .rank {{ width:26px; flex:none; text-align:right; font-weight:800; font-size:13px; color:var(--blue); }}
+  .name {{ flex:1; min-width:0; font-weight:700; font-size:13.5px;
           white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
-  .dif {{ font-size:9px; color:#8a98a5; }}
-  .grid {{ flex:1; display:flex; flex-wrap:wrap; gap:1px; align-content:center; }}
-  .grid span {{ width:6px; height:6px; flex:none; border-radius:1px; }}
-  .grid .hit {{ background:var(--hit); }}
-  .grid .miss {{ background:var(--miss); }}
-  .grid .pending {{ background:transparent; border:1px solid #d8e2ec; }}
-  .pts {{ width:30px; flex:none; text-align:right; font-weight:700; font-size:13px; }}
-  .foot {{ padding:11px 16px; font-size:11px; color:#8a98a5;
+  .medal {{ margin-right:3px; }}
+  .dif {{ flex:none; font-size:10px; color:var(--muted); }}
+  .pts {{ flex:none; font-weight:800; font-size:15px; }}
+  .pts i {{ font-style:normal; font-size:10px; font-weight:600; color:var(--muted); margin-left:1px; }}
+  .track {{ margin-top:5px; height:9px; border-radius:3px; overflow:hidden;
+           background:var(--pending); white-space:nowrap; font-size:0; }}
+  .track span {{ display:inline-block; vertical-align:top; width:{seg_w}; height:9px; }}
+  .track .hit {{ background:var(--hit); }}
+  .track .miss {{ background:var(--miss); }}
+  .track .pending {{ background:transparent; }}
+  .foot {{ padding:9px 14px; font-size:11px; color:var(--muted); border-top:1px solid var(--line);
           display:flex; flex-wrap:wrap; align-items:center; gap:10px; }}
-  .foot .lg {{ display:inline-flex; align-items:center; gap:4px; }}
+  .foot .lg {{ display:inline-flex; align-items:center; gap:5px; }}
   .foot .lg i {{ width:11px; height:11px; flex:none; border-radius:2px; }}
   .foot .lg i.hit {{ background:var(--hit); }}
   .foot .lg i.miss {{ background:var(--miss); }}
-  .foot .lg i.pending {{ border:1px solid #d8e2ec; }}
+  .foot .lg i.pending {{ background:var(--pending); }}
   .foot .src {{ margin-left:auto; }}
-  .actions {{ max-width:540px; margin:14px auto 0; }}
+  .actions {{ max-width:520px; margin:14px auto 0; }}
   button {{ width:100%; border:0; border-radius:12px; padding:15px; font-size:16px; font-weight:700;
            color:#fff; background:#25D366; cursor:pointer; }}
   button:active {{ filter:brightness(.95); }}
-  .hint {{ text-align:center; font-size:12px; color:#8a98a5; margin-top:8px; }}
+  .hint {{ text-align:center; font-size:12px; color:var(--muted); margin-top:8px; }}
 </style>
 </head>
 <body>
@@ -205,15 +214,9 @@ def render_html(people, leader_points=None):
 <script>
 async function makeBlob() {{
   const node = document.getElementById('card');
-  // backgroundColor: null = transparent utanför kortets rundade hörn.
-  const src = await html2canvas(node, {{scale: 2, backgroundColor: null}});
-  // Padda till kvadrat (transparent) så WhatsApp visar HELA bilden – höga
-  // porträttbilder beskärs annars i chattens förhandsvisning.
-  const size = Math.max(src.width, src.height);
-  const out = document.createElement('canvas');
-  out.width = size; out.height = size;
-  out.getContext('2d').drawImage(src, (size - src.width) / 2, (size - src.height) / 2);
-  return await new Promise(r => out.toBlob(r, 'image/png'));
+  // backgroundColor: null = transparenta (rundade) hörn, ingen vit bakgrund.
+  const canvas = await html2canvas(node, {{scale: 2, backgroundColor: null}});
+  return await new Promise(r => canvas.toBlob(r, 'image/png'));
 }}
 document.getElementById('share').addEventListener('click', async () => {{
   try {{
