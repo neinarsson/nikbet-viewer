@@ -130,12 +130,12 @@ def render_html(people, leader_points=None):
         default=0,
     )
     # Rad 2 i underrubriken: totalledare + matcher spelade (egen rad = snyggare).
-    parts = []
-    if leader_points:
-        parts.append(f"Totalledaren har {H.escape(leader_points)} p")
+    meta = [f"Uppd. {updated}"]
     if total:
-        parts.append(f"{played} av {total} spelade")
-    subline2 = f"<br>{' · '.join(parts)}" if parts else ""
+        meta.append(f"{played}/{total} spelade")
+    if leader_points:
+        meta.append(f"ledaren {H.escape(leader_points)} p")
+    submeta = " · ".join(meta)
     seg_w = f"calc(100% / {total})" if total else "0"
     return f"""<!DOCTYPE html>
 <html lang="sv">
@@ -153,25 +153,27 @@ def render_html(people, leader_points=None):
          margin:0; background:#e9eef3; color:var(--ink); padding:16px; }}
   .wrap {{ max-width:520px; margin:0 auto; }}
   #card {{ background:#fff; border-radius:16px; overflow:hidden; box-shadow:0 6px 22px rgba(20,40,60,.13); }}
-  .head {{ background:linear-gradient(135deg,#3aa9f0,#1577c7); color:#fff; padding:14px 16px; }}
-  .head h1 {{ font-size:17px; font-weight:800; margin:0; line-height:1.2; }}
-  .head .sub {{ font-size:11.5px; opacity:.92; margin-top:4px; line-height:1.5; }}
-  .person {{ padding:7px 14px 8px; }}
+  .head {{ background:linear-gradient(135deg,#3aa9f0,#1577c7); color:#fff; padding:12px 15px; }}
+  .head h1 {{ font-size:16px; font-weight:800; margin:0; line-height:1.2; }}
+  .head .sub {{ font-size:11px; opacity:.92; margin-top:3px; }}
+  .person {{ padding:4px 14px 5px; }}
   .person + .person {{ border-top:1px solid var(--line); }}
   .prow {{ display:flex; align-items:baseline; gap:8px; }}
   .rank {{ width:26px; flex:none; text-align:right; font-weight:800; font-size:13px; color:var(--blue); }}
-  .name {{ flex:1; min-width:0; font-weight:700; font-size:13.5px;
+  .name {{ flex:1; min-width:0; font-weight:700; font-size:13px;
           white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
   .dif {{ flex:none; font-size:10px; color:var(--muted); }}
-  .pts {{ flex:none; font-weight:800; font-size:15px; }}
-  .pts i {{ font-style:normal; font-size:10px; font-weight:600; color:var(--muted); margin-left:1px; }}
-  .track {{ margin-top:5px; height:9px; border-radius:3px; overflow:hidden;
+  .pts {{ flex:none; font-weight:800; font-size:14px; }}
+  .pts i {{ font-style:normal; font-size:9px; font-weight:600; color:var(--muted); margin-left:1px; }}
+  .track {{ margin-top:3px; height:10px; border-radius:2px; overflow:hidden;
            background:var(--pending); white-space:nowrap; font-size:0; }}
-  .track span {{ display:inline-block; vertical-align:top; width:{seg_w}; height:9px; }}
+  .track span {{ display:inline-block; vertical-align:top; width:{seg_w}; height:10px;
+                border-right:1px solid #fff; }}
+  .track span:nth-child(6n) {{ border-right-color:#b7c4d0; }}
   .track .hit {{ background:var(--hit); }}
   .track .miss {{ background:var(--miss); }}
   .track .pending {{ background:transparent; }}
-  .foot {{ padding:9px 14px; font-size:11px; color:var(--muted); border-top:1px solid var(--line);
+  .foot {{ padding:7px 14px; font-size:11px; color:var(--muted); border-top:1px solid var(--line);
           display:flex; flex-wrap:wrap; align-items:center; gap:10px; }}
   .foot .lg {{ display:inline-flex; align-items:center; gap:5px; }}
   .foot .lg i {{ width:11px; height:11px; flex:none; border-radius:2px; }}
@@ -191,7 +193,7 @@ def render_html(people, leader_points=None):
   <div id="card">
     <div class="head">
       <h1>{H.escape(TITLE)}</h1>
-      <div class="sub">Uppdaterad {updated}{subline2}</div>
+      <div class="sub">{submeta}</div>
     </div>
 {rows}
     <div class="foot">
