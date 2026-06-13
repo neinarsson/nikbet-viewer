@@ -23,6 +23,7 @@ import html as H
 import hashlib
 import datetime
 import urllib.request
+from zoneinfo import ZoneInfo
 
 SOURCE_URL = os.environ.get("SOURCE_URL", "https://fotbollstips.nikbet.com")
 NAMES_FILE = os.environ.get("NAMES_FILE", "names.txt")
@@ -31,7 +32,8 @@ OUTPUT_DIR = os.environ.get("OUTPUT_DIR", "public")
 # Antingen en lokal fil (committad i repot) eller en publik URL.
 PREV_STATE_FILE = os.environ.get("PREV_STATE_FILE", "").strip()
 PREV_STATE_URL = os.environ.get("PREV_STATE_URL", "").strip()
-TITLE = os.environ.get("TITLE", "Appels Fotbollstips VM 2026 – vårt gäng")
+TITLE = os.environ.get("TITLE", "Fotbollstips VM 2026 – vårt gäng")
+TZ = ZoneInfo("Europe/Stockholm")
 
 
 def fetch(url: str) -> str:
@@ -64,11 +66,13 @@ def extract(html, selected):
     )
     body = m.group(0).split("<tbody>", 1)[1]
     people = []
+    leader_points = None  # totalledarens poäng (första raden i tabellen)
     last_pos = ""  # vid delad placering är cellen tom – ärv senaste numrerade
     for row in re.findall(r"<tr>.*?</tr>", body, re.DOTALL):
         if 'scope="row"' not in row:
             continue
-        cells = re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row, re.DOTALL)
+        # Behåll hela cell-taggen (inkl. bgcolor) så vi kan läsa matchfärgerna.
+        cells = re.findall(r"<t[dh][^>]*>.*?</t[dh]>", row, re.DOTALL)
         if len(cells) < 4:
             continue
         pos = norm(strip_tags(cells[0])).rstrip(".")
@@ -76,27 +80,53 @@ def extract(html, selected):
             last_pos = pos
         else:
             pos = last_pos  # delad placering – samma som raden ovan
+        if leader_points is None:
+            leader_points = norm(strip_tags(cells[-1]))  # första raden = totalledaren
         name = norm(strip_tags(cells[2]))
         if name.casefold() not in selected:
             continue
         points = norm(strip_tags(cells[-1]))
         skilje = norm(strip_tags(cells[3]))
-        people.append({"pos": pos, "name": name, "points": points, "skilje": skilje})
-    return people
+        # Matchcellerna ligger mellan skilje (index 3) och poäng (sista cellen).
+        # Grön bakgrund = rätt tippad, röd = fel, ofärgad = ännu ej spelad.
+        # Tomma celler är avdelare mellan omgångar – hoppa över dem.
+        matches = []
+        for c in cells[4:-1]:
+            if norm(strip_tags(c)) == "":
+                continue
+            lc = c.lower()
+            if "#008000" in lc:
+                matches.append("hit")
+            elif "#ff0000" in lc:
+                matches.append("miss")
+            else:
+                matches.append("pending")
+        people.append(
+            {"pos": pos, "name": name, "points": points, "skilje": skilje, "matches": matches}
+        )
+    return people, leader_points
 
 
-def render_html(people):
-    rows = "\n".join(
-        f"""      <tr>
-        <td class="pos">{H.escape(p['pos'])}</td>
-        <td class="name">{H.escape(p['name'])}</td>
-        <td class="pts">{H.escape(p['points'])}</td>
-        <td class="dif">{H.escape(p['skilje'])}</td>
-      </tr>"""
-        for p in people
-    )
-    updated = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    share_text = "Vår topplista – Appels Fotbollstips VM 2026"
+def render_html(people, leader_points=None):
+    blocks = []
+    for p in people:
+        boxes = "".join(f'<span class="{m}"></span>' for m in p.get("matches", []))
+        blocks.append(
+            f"""      <div class="person">
+        <div class="prow">
+          <span class="pos">{H.escape(p['pos'])}</span>
+          <div class="who">
+            <span class="name">{H.escape(p['name'])}</span>
+            <span class="dif">{H.escape(p['skilje'])}</span>
+          </div>
+          <span class="pts">{H.escape(p['points'])} p</span>
+        </div>
+        <div class="grid">{boxes}</div>
+      </div>"""
+        )
+    rows = "\n".join(blocks)
+    updated = datetime.datetime.now(TZ).strftime("%Y-%m-%d %H:%M")
+    leader = f" · Totalledaren har {H.escape(leader_points)} p" if leader_points else ""
     return f"""<!DOCTYPE html>
 <html lang="sv">
 <head>
@@ -106,7 +136,7 @@ def render_html(people):
 <title>{H.escape(TITLE)}</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
-  :root {{ --blue:#33ABF9; }}
+  :root {{ --blue:#33ABF9; --hit:#22c55e; --miss:#ef4444; }}
   * {{ box-sizing:border-box; }}
   body {{ font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
          margin:0; background:#eef3f7; color:#1a1a1a; padding:16px; }}
@@ -115,19 +145,27 @@ def render_html(people):
   .head {{ background:var(--blue); color:#fff; padding:16px 18px; }}
   .head h1 {{ font-size:18px; margin:0 0 4px; line-height:1.25; }}
   .head .sub {{ font-size:12px; opacity:.9; }}
-  table {{ width:100%; border-collapse:collapse; }}
-  th,td {{ padding:10px 12px; text-align:left; font-size:15px; }}
-  thead th {{ font-size:11px; text-transform:uppercase; letter-spacing:.04em; color:#667;
-             background:#f5f8fb; border-bottom:1px solid #e3eaf0; }}
-  tbody tr:nth-child(even) {{ background:#f8fbfd; }}
-  tbody tr {{ border-bottom:1px solid #eef2f5; }}
-  td.pos {{ width:42px; font-weight:700; color:var(--blue); }}
-  td.name {{ font-weight:600; }}
-  td.pts {{ width:54px; text-align:right; font-weight:700; }}
-  td.dif {{ width:120px; text-align:right; font-size:12px; color:#778; white-space:nowrap; }}
-  th.pts {{ text-align:right; }}
-  th.dif {{ text-align:right; }}
-  .foot {{ padding:10px 14px; font-size:11px; color:#8a98a5; }}
+  .person {{ padding:11px 16px; border-bottom:1px solid #eef2f5; }}
+  .person:last-of-type {{ border-bottom:0; }}
+  .prow {{ display:flex; align-items:center; gap:10px; }}
+  .pos {{ width:34px; flex:none; font-weight:700; color:var(--blue); font-size:15px; }}
+  .who {{ flex:1; min-width:0; display:flex; flex-direction:column; }}
+  .name {{ font-weight:600; font-size:15px; }}
+  .dif {{ font-size:11px; color:#8a98a5; margin-top:1px; }}
+  .pts {{ flex:none; font-weight:700; font-size:15px; white-space:nowrap; }}
+  .grid {{ margin-top:8px; padding-left:44px; display:flex; flex-wrap:wrap; gap:3px; }}
+  .grid span {{ width:14px; height:14px; flex:none; border-radius:2px; }}
+  .grid .hit {{ background:var(--hit); }}
+  .grid .miss {{ background:var(--miss); }}
+  .grid .pending {{ background:transparent; border:1px solid #d8e2ec; }}
+  .foot {{ padding:11px 16px; font-size:11px; color:#8a98a5;
+          display:flex; flex-wrap:wrap; align-items:center; gap:10px; }}
+  .foot .lg {{ display:inline-flex; align-items:center; gap:4px; }}
+  .foot .lg i {{ width:11px; height:11px; flex:none; border-radius:2px; }}
+  .foot .lg i.hit {{ background:var(--hit); }}
+  .foot .lg i.miss {{ background:var(--miss); }}
+  .foot .lg i.pending {{ border:1px solid #d8e2ec; }}
+  .foot .src {{ margin-left:auto; }}
   .actions {{ max-width:540px; margin:14px auto 0; }}
   button {{ width:100%; border:0; border-radius:12px; padding:15px; font-size:16px; font-weight:700;
            color:#fff; background:#25D366; cursor:pointer; }}
@@ -140,25 +178,22 @@ def render_html(people):
   <div id="card">
     <div class="head">
       <h1>{H.escape(TITLE)}</h1>
-      <div class="sub">Topplista – uppdaterad {updated}</div>
+      <div class="sub">Uppdaterad {updated}{leader}</div>
     </div>
-    <table>
-      <thead>
-        <tr><th>P.</th><th>Namn</th><th class="pts">Poäng</th><th class="dif">Skilje (mål)</th></tr>
-      </thead>
-      <tbody>
 {rows}
-      </tbody>
-    </table>
-    <div class="foot">Källa: fotbollstips.nikbet.com</div>
+    <div class="foot">
+      <span class="lg"><i class="hit"></i>rätt</span>
+      <span class="lg"><i class="miss"></i>fel</span>
+      <span class="lg"><i class="pending"></i>ej spelad</span>
+      <span class="src">Källa: fotbollstips.nikbet.com</span>
+    </div>
   </div>
   <div class="actions">
-    <button id="share">📲 Dela till WhatsApp</button>
-    <div class="hint">Skapar en bild och öppnar delningsmenyn – välj er grupp.</div>
+    <button id="share">📲 Dela bilden</button>
+    <div class="hint">Skapar en bild av topplistan – dela eller spara och klistra in i WhatsApp.</div>
   </div>
 </div>
 <script>
-const SHARE_TEXT = {json.dumps(share_text)};
 async function makeBlob() {{
   const node = document.getElementById('card');
   const canvas = await html2canvas(node, {{scale: 2, backgroundColor: '#ffffff'}});
@@ -167,16 +202,17 @@ async function makeBlob() {{
 document.getElementById('share').addEventListener('click', async () => {{
   try {{
     const blob = await makeBlob();
-    const file = new File([blob], 'leaderboard.png', {{type: 'image/png'}});
+    const file = new File([blob], 'topplista.png', {{type: 'image/png'}});
+    // Dela ENBART bilden (ingen text/länk) så det blir en sak att klistra in.
     if (navigator.canShare && navigator.canShare({{files: [file]}})) {{
-      await navigator.share({{files: [file], text: SHARE_TEXT}});
+      await navigator.share({{files: [file]}});
       return;
     }}
-    // Fallback (desktop): ladda ned bilden och öppna WhatsApp.
+    // Fallback (t.ex. desktop): ladda ned bilden.
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = 'leaderboard.png'; a.click();
-    window.open('https://wa.me/?text=' + encodeURIComponent(SHARE_TEXT + ' ' + location.href), '_blank');
+    a.href = url; a.download = 'topplista.png'; a.click();
+    URL.revokeObjectURL(url);
   }} catch (e) {{ /* användaren avbröt delningen */ }}
 }});
 </script>
@@ -214,7 +250,7 @@ def previous_hash():
 def main():
     selected = load_selected(NAMES_FILE)
     html = fetch(SOURCE_URL)
-    people = extract(html, selected)
+    people, leader_points = extract(html, selected)
 
     digest = hashlib.sha256(
         json.dumps([[p["pos"], p["name"], p["points"], p["skilje"]] for p in people],
@@ -227,7 +263,7 @@ def main():
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     with open(os.path.join(OUTPUT_DIR, "index.html"), "w", encoding="utf-8") as f:
-        f.write(render_html(people))
+        f.write(render_html(people, leader_points))
     with open(os.path.join(OUTPUT_DIR, "state.json"), "w", encoding="utf-8") as f:
         json.dump({"hash": digest,
                    "updated": datetime.datetime.now(datetime.timezone.utc).isoformat()},
