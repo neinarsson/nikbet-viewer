@@ -1,0 +1,112 @@
+# Bygger topplistan och publicerar den på GitHub Pages.
+#
+# Varför så här: källan (fotbollstips.nikbet.com) blockerar Cloudflares
+# server-IP:n, så en live-hämtning från en worker ger tom tabell. GitHub:s
+# runner blockeras INTE – den hämtar, bygger en färdig HTML-sida och
+# publicerar den på Pages. Sidan visar alltid senaste bygget.
+#
+# Uppdateras automatiskt var 30:e minut, vid push till main, och kan köras
+# manuellt (Actions-fliken → Run workflow). Postar dessutom en notis i ett
+# issue när ert gängs ställning ändrats.
+name: Publicera topplista
+
+on:
+  schedule:
+    - cron: "*/30 * * * *" # var 30:e minut (UTC)
+  workflow_dispatch: {} # manuell körning från Actions-fliken
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  issues: write
+
+# Kör aldrig två publiceringar samtidigt.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  SITE_URL: "https://neinarsson.github.io/nikbet-viewer/"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.check.outputs.changed }}
+    steps:
+      - name: Checka ut repot
+        uses: actions/checkout@v4
+
+      - name: Bygg sidan (runnern når källan obehindrat)
+        env:
+          # Jämför mot förra publicerade state.json (på Pages) för att avgöra
+          # om ställningen ändrats – ingen state behöver committas tillbaka.
+          PREV_STATE_URL: "https://neinarsson.github.io/nikbet-viewer/state.json"
+        run: python3 make_leaderboard.py
+
+      - name: Avgör om ställningen ändrats
+        id: check
+        run: echo "changed=$(cat changed.txt)" >> "$GITHUB_OUTPUT"
+
+      - name: Spara summary åt notis-jobbet
+        uses: actions/upload-artifact@v4
+        with:
+          name: summary
+          path: public/summary.txt
+          retention-days: 1
+
+      - name: Konfigurera Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Ladda upp sidan som Pages-artifakt
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Deploya till GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
+
+  notify:
+    needs: build
+    if: needs.build.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hämta summary
+        uses: actions/download-artifact@v4
+        with:
+          name: summary
+
+      - name: Posta notis i issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          TITLE="📊 Topplistan – notiser"
+          SUMMARY="$(cat summary.txt)"
+          BODY="$(printf '%s\n\n🔗 Öppna sidan och dela: %s\n' "$SUMMARY" "$SITE_URL")"
+
+          # Hitta befintligt öppet issue med exakt titel, annars skapa ett.
+          NUM="$(gh issue list --state open --search "$TITLE in:title" \
+                  --json number,title \
+                  --jq "map(select(.title == \"$TITLE\")) | first | .number // empty")"
+          if [ -z "$NUM" ]; then
+            NUM="$(gh issue create --title "$TITLE" \
+                    --body "Notiser när vårt gängs ställning ändras." \
+                    | grep -oE '[0-9]+$')"
+          fi
+
+          gh issue comment "$NUM" --body "$BODY"
