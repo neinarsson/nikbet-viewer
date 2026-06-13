@@ -127,6 +127,12 @@ def render_html(people, leader_points=None):
     rows = "\n".join(blocks)
     updated = datetime.datetime.now(TZ).strftime("%Y-%m-%d %H:%M")
     leader = f" · Totalledaren har {H.escape(leader_points)} p" if leader_points else ""
+    total = max((len(p.get("matches", [])) for p in people), default=0)
+    played = max(
+        (sum(1 for m in p.get("matches", []) if m != "pending") for p in people),
+        default=0,
+    )
+    progress = f" · {played} av {total} spelade" if total else ""
     return f"""<!DOCTYPE html>
 <html lang="sv">
 <head>
@@ -142,7 +148,7 @@ def render_html(people, leader_points=None):
          margin:0; background:#eef3f7; color:#1a1a1a; padding:16px; }}
   .wrap {{ max-width:540px; margin:0 auto; }}
   #card {{ background:#fff; border-radius:14px; overflow:hidden; box-shadow:0 2px 10px rgba(0,0,0,.12); }}
-  .head {{ background:var(--blue); color:#fff; padding:16px 18px; }}
+  .head {{ background:linear-gradient(135deg,#42b4fb,#1e84d8); color:#fff; padding:16px 18px; }}
   .head h1 {{ font-size:18px; margin:0 0 4px; line-height:1.25; }}
   .head .sub {{ font-size:12px; opacity:.9; }}
   .person {{ padding:7px 14px; border-bottom:1px solid #eef2f5; }}
@@ -178,7 +184,7 @@ def render_html(people, leader_points=None):
   <div id="card">
     <div class="head">
       <h1>{H.escape(TITLE)}</h1>
-      <div class="sub">Uppdaterad {updated}{leader}</div>
+      <div class="sub">Uppdaterad {updated}{leader}{progress}</div>
     </div>
 {rows}
     <div class="foot">
@@ -196,7 +202,8 @@ def render_html(people, leader_points=None):
 <script>
 async function makeBlob() {{
   const node = document.getElementById('card');
-  const canvas = await html2canvas(node, {{scale: 2, backgroundColor: '#ffffff'}});
+  // backgroundColor: null = transparent utanför kortets rundade hörn.
+  const canvas = await html2canvas(node, {{scale: 2, backgroundColor: null}});
   return await new Promise(r => canvas.toBlob(r, 'image/png'));
 }}
 document.getElementById('share').addEventListener('click', async () => {{
