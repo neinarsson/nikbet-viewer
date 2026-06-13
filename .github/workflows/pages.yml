@@ -89,6 +89,23 @@ jobs:
         with:
           name: summary
 
+      - name: Push-notis via ntfy.sh
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+        run: |
+          set -euo pipefail
+          if [ -z "${NTFY_TOPIC:-}" ]; then
+            echo "NTFY_TOPIC-secret saknas – hoppar över push (lägg till den för att aktivera)."
+            exit 0
+          fi
+          curl -fsS \
+            -H "Title: Topplistan uppdaterad" \
+            -H "Click: ${SITE_URL}" \
+            -H "Tags: soccer" \
+            --data-binary @summary.txt \
+            "https://ntfy.sh/${NTFY_TOPIC}" \
+            || echo "::warning::ntfy-push misslyckades (notisen i issuet finns kvar)."
+
       - name: Posta notis i issue
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
