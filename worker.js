@@ -1,19 +1,7 @@
 /**
  * Cloudflare Worker – live "titthål" mot fotbollstips.nikbet.com.
- *
- * Rutter:
- *   /        Kondenserad topplista för ert gäng + "Dela till WhatsApp"-knapp.
- *   /full    Hela originalsidan, men med bara era personer i topplistan.
- *
- * Vid varje besök hämtas källsidan i realtid – sidan visar alltid exakt det
- * källan visar just nu. Funkar med privat GitHub-repo (deployas direkt med
- * wrangler, ingen repo-koppling krävs).
- *
- * Deploy (engångs, kräver gratis Cloudflare-konto):
- *   npm i -g wrangler && wrangler login && wrangler deploy
- *   -> du får en adress på *.workers.dev
- *
- * Ändra vilka som visas i listan NAMES nedan.
+ * Rutter:  /  = kondenserad topplista + Dela-knapp.   /full = hela sidan filtrerad.
+ * Ändra vilka som visas i listan NAMES nedan (håll i synk med names.txt).
  */
 
 const SOURCE_URL = "https://fotbollstips.nikbet.com";
@@ -36,9 +24,7 @@ const esc = (s) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 function firstTable(html) {
-  const m = html.match(
-    /<table class="table table-borderless table-hover[\s\S]*?<\/table>/
-  );
+  const m = html.match(/<table class="table table-borderless table-hover[\s\S]*?<\/table>/);
   return m ? m[0] : null;
 }
 
@@ -77,7 +63,11 @@ function renderCondensed(people) {
       </tr>`
     )
     .join("\n");
-  const updated = new Date().toISOString().slice(0, 16).replace("T", " ") + " UTC";
+  const updated = new Intl.DateTimeFormat("sv-SE", {
+    dateStyle: "short",
+    timeStyle: "short",
+    timeZone: "Europe/Stockholm",
+  }).format(new Date());
   const shareText = "Vår topplista – Appels Fotbollstips VM 2026";
   return `<!DOCTYPE html>
 <html lang="sv">
@@ -177,8 +167,7 @@ function renderFull(html) {
       const name = norm(stripTags(cells[2][1])).toLowerCase();
       return SELECTED.has(name) ? row : "";
     });
-    // Skarva med index/slice – inte String.replace, vars $-sekvenser i
-    // ersättningssträngen annars korrumperar resultatet.
+    // Skarva med index/slice – inte String.replace (vars $-sekvenser korrumperar resultatet).
     const start = html.indexOf(table);
     html = html.slice(0, start) + head + "<tbody>" + newBody + html.slice(start + table.length);
   }
@@ -196,11 +185,17 @@ export default {
   async fetch(request) {
     const path = new URL(request.url).pathname;
     const upstream = await fetch(SOURCE_URL, {
-      headers: { "User-Agent": "Mozilla/5.0 (nikbet-view worker)" },
-      cf: { cacheTtl: 60, cacheEverything: true },
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " +
+          "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept":
+          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "sv-SE,sv;q=0.9,en;q=0.8",
+        "Referer": SOURCE_URL + "/",
+      },
     });
     const src = await upstream.text();
-
     const body = path === "/full" ? renderFull(src) : renderCondensed(extractPeople(src));
     return new Response(body, {
       headers: {
