@@ -276,9 +276,14 @@ def main():
     html = fetch(SOURCE_URL)
     people, leader_points = extract(html, selected)
 
+    # Inkludera matchboxarna (matches) i hashen så att ett nytt matchresultat –
+    # som färgar en box grå→grön/röd – triggar publicering + notis, även om
+    # ingens poäng/placering råkar ändras av just den matchen.
     digest = hashlib.sha256(
-        json.dumps([[p["pos"], p["name"], p["points"], p["skilje"]] for p in people],
-                   ensure_ascii=False).encode("utf-8")
+        json.dumps(
+            [[p["pos"], p["name"], p["points"], p["skilje"], p["matches"]] for p in people],
+            ensure_ascii=False,
+        ).encode("utf-8")
     ).hexdigest()
 
     prev = previous_hash()
