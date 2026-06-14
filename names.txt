@@ -15,6 +15,7 @@ Johanna Einarsson
 Bo Einarsson
 Emil Fransson
 Sven Möller
+Lena Nilsdotter
 
 # === Övriga tillgängliga namn (avkommentera för att lägga till) ===
 # Edvin Sundström
@@ -107,9 +108,7 @@ Sven Möller
 # Johan Krii
 # Martin Movitz
 # Anders Nilsson
-# Anette Krii
-# Lena Nilsdotter
-# Fredrik Kuusela
+# Anette Krii# Fredrik Kuusela
 # Tommi Wilkman
 # Katarina Borg
 # Johan Magnusson
