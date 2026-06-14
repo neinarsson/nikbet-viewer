@@ -187,7 +187,6 @@ def render_html(people, leader_points=None):
   .foot .lg i.hit {{ background:var(--hit); }}
   .foot .lg i.miss {{ background:var(--miss); }}
   .foot .lg i.pending {{ background:var(--pending); }}
-  .foot .src {{ margin-left:auto; }}
   .actions {{ max-width:520px; margin:14px auto 0; }}
   button {{ width:100%; border:0; border-radius:12px; padding:15px; font-size:16px; font-weight:700;
            color:#fff; background:#25D366; cursor:pointer; }}
@@ -207,7 +206,6 @@ def render_html(people, leader_points=None):
       <span class="lg"><i class="hit"></i>rätt</span>
       <span class="lg"><i class="miss"></i>fel</span>
       <span class="lg"><i class="pending"></i>ej spelad</span>
-      <span class="src">Källa: fotbollstips.nikbet.com</span>
     </div>
   </div>
   <div class="actions">
