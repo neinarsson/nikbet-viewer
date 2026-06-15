@@ -113,6 +113,27 @@ def extract(html, selected):
     return people, leader_points
 
 
+def extract_results(html):
+    """Hämtar 'Res'-kolumnen ur matchtabellen (tabell 2): utfallet 1/X/2 per
+    match, tomt = ospelad. Detta är den auktoritativa signalen för att en match
+    spelats – mer pålitlig än de färgade boxarna i topplistan, som kan släpa."""
+    for t in re.findall(r"<table[^>]*>.*?</table>", html, re.DOTALL):
+        head = t[: t.find("<tbody>")] if "<tbody>" in t else t
+        headers = [norm(strip_tags(h)) for h in re.findall(r"<t[hd][^>]*>(.*?)</t[hd]>", head, re.DOTALL)]
+        if "Res" not in headers:
+            continue
+        idx = headers.index("Res")  # kolumnindex för Res (robust mot omordning)
+        body = t.split("<tbody>", 1)[1] if "<tbody>" in t else t
+        results = []
+        for row in re.findall(r"<tr>.*?</tr>", body, re.DOTALL):
+            cells = re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row, re.DOTALL)
+            if len(cells) <= idx:
+                continue
+            results.append(norm(strip_tags(cells[idx])))
+        return results
+    return []
+
+
 def render_html(people, leader_points=None):
     blocks = []
     for p in people:
@@ -273,20 +294,28 @@ def main():
     selected = load_selected(NAMES_FILE)
     html = fetch(SOURCE_URL)
     people, leader_points = extract(html, selected)
+    results = extract_results(html)
 
-    # Inkludera matchboxarna (matches) i hashen så att ett nytt matchresultat –
-    # som färgar en box grå→grön/röd – triggar publicering + notis, även om
-    # ingens poäng/placering råkar ändras av just den matchen.
+    # Ändringsdetektering: våra ställningsfält (placering/namn/poäng/skilje) PLUS
+    # 'Res'-kolumnen i matchtabellen. Res är den direkta signalen för att en match
+    # spelats, så vi fångar varje nytt resultat även om topplistans boxar släpar.
     digest = hashlib.sha256(
         json.dumps(
-            [[p["pos"], p["name"], p["points"], p["skilje"], p["matches"]] for p in people],
+            {
+                "standings": [[p["pos"], p["name"], p["points"], p["skilje"]] for p in people],
+                "results": results,
+            },
             ensure_ascii=False,
         ).encode("utf-8")
     ).hexdigest()
 
     prev = previous_hash()
     changed = prev != digest
-    print(f"Personer: {len(people)} | hash {digest[:10]} | förra {str(prev)[:10]} | ändrad: {changed}")
+    played = sum(1 for r in results if r not in ("", "-"))
+    print(
+        f"Personer: {len(people)} | matcher spelade: {played}/{len(results)} | "
+        f"hash {digest[:10]} | förra {str(prev)[:10]} | ändrad: {changed}"
+    )
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     with open(os.path.join(OUTPUT_DIR, "index.html"), "w", encoding="utf-8") as f:
