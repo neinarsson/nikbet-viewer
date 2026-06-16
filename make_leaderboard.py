@@ -264,8 +264,11 @@ document.getElementById('share').addEventListener('click', async () => {{
 """
 
 
-def make_summary(people):
-    lines = [TITLE, ""]
+def make_summary(people, played=None, total=None):
+    lines = [TITLE]
+    if total:
+        lines.append(f"{played}/{total} matcher spelade")
+    lines.append("")
     for p in people:
         lines.append(f"{p['pos']}. {first_name(p['name'])} — {p['points']} p ({p['skilje']})")
     return "\n".join(lines) + "\n"
@@ -325,7 +328,7 @@ def main():
                    "updated": datetime.datetime.now(datetime.timezone.utc).isoformat()},
                   f, ensure_ascii=False)
     with open(os.path.join(OUTPUT_DIR, "summary.txt"), "w", encoding="utf-8") as f:
-        f.write(make_summary(people))
+        f.write(make_summary(people, played, len(results)))
     with open("changed.txt", "w", encoding="utf-8") as f:
         f.write("true" if changed else "false")
 
