@@ -372,8 +372,17 @@ def render_race_html(players, sel, M, dates):
 <script>
 async function makeBlob() {{
   const node = document.getElementById('card');
-  const canvas = await html2canvas(node, {{scale: 2, backgroundColor: '#ffffff'}});
-  return await new Promise(r => canvas.toBlob(r, 'image/png'));
+  // Rita kortet i full designbredd (1200px) vid fångst → skarpt oavsett skärm;
+  // backgroundColor:null → transparenta rundade hörn (som topplistan).
+  const prevW = node.style.width, prevMW = node.style.maxWidth;
+  node.style.maxWidth = 'none';
+  node.style.width = '1200px';
+  try {{
+    const canvas = await html2canvas(node, {{scale: 2, backgroundColor: null, windowWidth: 1280}});
+    return await new Promise(r => canvas.toBlob(r, 'image/png'));
+  }} finally {{
+    node.style.width = prevW; node.style.maxWidth = prevMW;
+  }}
 }}
 document.getElementById('share').addEventListener('click', async () => {{
   try {{
