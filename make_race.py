@@ -29,8 +29,15 @@ TZ = ZoneInfo("Europe/Stockholm")
 # Kategoriska färger för vårt gäng – tydligt skilda från grått och mörka nog för
 # vit text i slutcirkeln. (Identitet, inte utfall – inte topplistans grön/röd.)
 PALETTE = [
-    "#0072B2", "#C0392B", "#1E8449", "#8E44AD", "#D55E00",
-    "#2E86C1", "#B0578D", "#7D5A2A", "#34495E",
+    "#E6194B",  # crimson
+    "#4363D8",  # blå
+    "#3CB44B",  # grön
+    "#F58231",  # orange
+    "#911EB4",  # lila
+    "#469990",  # teal
+    "#F032E6",  # magenta
+    "#9A6324",  # brun
+    "#2F4858",  # mörk slate
 ]
 
 
@@ -163,6 +170,13 @@ def esc(s):
     return H.escape(s, quote=True)
 
 
+def text_color(hexc):
+    """Svart eller vit text beroende på färgens upplevda ljushet (YIQ)."""
+    h = hexc.lstrip("#")
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    return "#15212b" if (r * 299 + g * 587 + b * 114) / 1000 > 150 else "#ffffff"
+
+
 # --- SVG-layout ---
 VIEW_W, VIEW_H = 1200, 675
 ML, MR, MT, MB = 56, 150, 78, 52
@@ -284,7 +298,8 @@ def render_race_html(players, sel, M, dates):
         )
         parts.append(
             f'<text x="{cx:.1f}" y="{ly:.1f}" text-anchor="middle" dominant-baseline="central" '
-            f'font-family=\'{FONT}\' font-size="10" font-weight="700" fill="#fff">{esc(p["label"])}</text>'
+            f'font-family=\'{FONT}\' font-size="10" font-weight="700" '
+            f'fill="{text_color(p["color"])}">{esc(p["label"])}</text>'
         )
 
     svg = (
@@ -310,6 +325,7 @@ def render_race_html(players, sel, M, dates):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#2b9fe6">
 <title>{esc(TITLE)}</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
   :root {{ --blue:#2b9fe6; --ink:#15212b; --muted:#8a98a5; }}
   * {{ box-sizing:border-box; }}
@@ -326,6 +342,11 @@ def render_race_html(players, sel, M, dates):
   .chip b {{ color:var(--muted); font-weight:600; }}
   .foot {{ padding:8px 16px 14px; font-size:11px; color:var(--muted); line-height:1.5; }}
   .foot a {{ color:var(--blue); }}
+  .actions {{ max-width:min(96vw,1100px); margin:14px auto 0; }}
+  .actions button {{ width:100%; border:0; border-radius:12px; padding:15px; font-size:16px;
+           font-weight:700; color:#fff; background:#25D366; cursor:pointer; }}
+  .actions button:active {{ filter:brightness(.95); }}
+  .actions .hint {{ text-align:center; font-size:12px; color:var(--muted); margin-top:8px; }}
 </style>
 </head>
 <body>
@@ -343,7 +364,32 @@ def render_race_html(players, sel, M, dates):
       av det officiella skiljet). · <a href="index.html">← Till topplistan</a>
     </div>
   </div>
+  <div class="actions">
+    <button id="share">📲 Dela bilden</button>
+    <div class="hint">Liggande bild – inte WhatsApp-optimerad, men fullt delbar.</div>
+  </div>
 </div>
+<script>
+async function makeBlob() {{
+  const node = document.getElementById('card');
+  const canvas = await html2canvas(node, {{scale: 2, backgroundColor: '#ffffff'}});
+  return await new Promise(r => canvas.toBlob(r, 'image/png'));
+}}
+document.getElementById('share').addEventListener('click', async () => {{
+  try {{
+    const blob = await makeBlob();
+    const file = new File([blob], 'race.png', {{type: 'image/png'}});
+    if (navigator.canShare && navigator.canShare({{files: [file]}})) {{
+      await navigator.share({{files: [file]}});
+      return;
+    }}
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'race.png'; a.click();
+    URL.revokeObjectURL(url);
+  }} catch (e) {{ /* användaren avbröt delningen */ }}
+}});
+</script>
 </body>
 </html>
 """
