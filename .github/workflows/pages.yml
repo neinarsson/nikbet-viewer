@@ -47,6 +47,9 @@ jobs:
           PREV_STATE_URL: "https://neinarsson.github.io/nikbet-viewer/state.json"
         run: python3 make_leaderboard.py
 
+      - name: Bygg race-sidan (icke-kritisk – får aldrig fälla huvudbygget)
+        run: python3 make_race.py || echo "::warning::race-bygget misslyckades – race.html hoppas över"
+
       - name: Avgör om ställningen ändrats
         id: check
         run: echo "changed=$(cat changed.txt)" >> "$GITHUB_OUTPUT"

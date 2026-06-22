@@ -232,6 +232,7 @@ def render_html(people, leader_points=None):
   <div class="actions">
     <button id="share">📲 Dela bilden</button>
     <div class="hint">Skapar en bild av topplistan – dela eller spara och klistra in i WhatsApp.</div>
+    <div class="hint" style="margin-top:10px;"><a href="race.html" style="color:var(--blue);font-weight:600;">📈 Se placering över tid</a></div>
   </div>
 </div>
 <script>
