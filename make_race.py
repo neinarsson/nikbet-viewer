@@ -361,7 +361,7 @@ def render_race_html(players, sel, M, dates):
     <div class="foot">
       Tunna grå linjer = övriga {N_TOTAL - len(sel)} spelare. Placering 1 överst.
       Vid lika poäng rangordnas spelare efter nuvarande tabellplacering (en approximation
-      av det officiella skiljet). · <a href="index.html">← Till topplistan</a>
+      av det officiella skiljet).
     </div>
   </div>
   <div class="actions">
