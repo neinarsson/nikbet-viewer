@@ -405,14 +405,19 @@ document.getElementById('share').addEventListener('click', async () => {{
 
 
 def main():
-    selected = load_selected(NAMES_FILE)
+    names_env = os.environ.get("RACE_NAMES", "").strip()
+    selected = (
+        {norm(n).casefold() for n in names_env.split(",") if n.strip()}
+        if names_env else load_selected(NAMES_FILE)
+    )
+    out_name = os.environ.get("RACE_OUT", "race.html")
     html = fetch(SOURCE_URL)
     players = parse_all_players(html)
     M = played_count(players)
     if M < 1:
         out = "<!doctype html><meta charset=utf-8><p>Inga matcher spelade ännu.</p>"
         os.makedirs(OUTPUT_DIR, exist_ok=True)
-        with open(os.path.join(OUTPUT_DIR, "race.html"), "w", encoding="utf-8") as f:
+        with open(os.path.join(OUTPUT_DIR, out_name), "w", encoding="utf-8") as f:
             f.write(out)
         print("race: inga matcher spelade – skrev platshållare")
         return
@@ -433,9 +438,9 @@ def main():
         dates = []
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
-    with open(os.path.join(OUTPUT_DIR, "race.html"), "w", encoding="utf-8") as f:
+    with open(os.path.join(OUTPUT_DIR, out_name), "w", encoding="utf-8") as f:
         f.write(render_race_html(players, sel, M, dates))
-    print(f"race: {len(players)} spelare, M={M}, {len(sel)} valda -> {OUTPUT_DIR}/race.html")
+    print(f"race: {len(players)} spelare, M={M}, {len(sel)} valda -> {OUTPUT_DIR}/{out_name}")
 
 
 if __name__ == "__main__":
