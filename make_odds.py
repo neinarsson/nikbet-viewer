@@ -45,30 +45,30 @@ TZ = ZoneInfo("Europe/Stockholm")
 # Uppdatera värdena om du vill köra om med färska odds; spelade matcher faller
 # automatiskt bort (de räknas som ej längre ospelade i källan).
 ODDS = {
-    49: (0.40, 0.31, 0.29, 2.8),  # Schweiz–Kanada
-    50: (0.69, 0.18, 0.13, 2.4),  # Bosnien-Hercegovina–Qatar
-    51: (0.13, 0.18, 0.69, 2.5),  # Skottland–Brasilien
-    52: (0.80, 0.14, 0.06, 3.0),  # Marocko–Haiti
-    53: (0.27, 0.24, 0.49, 2.5),  # Tjeckien–Mexiko
-    54: (0.18, 0.25, 0.57, 2.5),  # Sydafrika–Sydkorea
-    55: (0.05, 0.12, 0.83, 3.0),  # Curaçao–Elfenbenskusten
-    56: (0.26, 0.23, 0.51, 2.7),  # Ecuador–Tyskland
-    57: (0.50, 0.28, 0.22, 2.9),  # Japan–Sverige  (Japan favorit – tvärtemot poolens tips)
-    58: (0.04, 0.10, 0.86, 3.1),  # Tunisien–Nederländerna
-    59: (0.27, 0.23, 0.50, 2.8),  # Turkiet–USA
-    60: (0.44, 0.28, 0.28, 2.4),  # Paraguay–Australien
-    61: (0.18, 0.22, 0.60, 2.9),  # Norge–Frankrike
-    62: (0.77, 0.16, 0.07, 3.0),  # Senegal–Irak
-    63: (0.40, 0.27, 0.33, 2.4),  # Kap Verde–Saudiarabien
-    64: (0.13, 0.23, 0.64, 2.3),  # Uruguay–Spanien
-    65: (0.40, 0.35, 0.25, 2.2),  # Egypten–Iran
-    66: (0.09, 0.13, 0.78, 3.0),  # Nya Zeeland–Belgien
-    67: (0.09, 0.12, 0.79, 3.0),  # Panama–England
-    68: (0.70, 0.15, 0.15, 2.3),  # Kroatien–Ghana
-    69: (0.27, 0.29, 0.44, 2.3),  # Colombia–Portugal
-    70: (0.54, 0.23, 0.23, 2.5),  # DR Kongo–Uzbekistan
-    71: (0.25, 0.40, 0.35, 2.5),  # Algeriet–Österrike
-    72: (0.07, 0.14, 0.79, 3.0),  # Jordanien–Argentina
+    49: (0.40, 0.31, 0.29, 2.8),  # Schweiz–Kanada (spelad)
+    50: (0.69, 0.18, 0.13, 2.4),  # Bosnien-Hercegovina–Qatar (spelad)
+    51: (0.13, 0.18, 0.69, 2.5),  # Skottland–Brasilien (spelad)
+    52: (0.80, 0.14, 0.06, 3.0),  # Marocko–Haiti (spelad)
+    53: (0.27, 0.24, 0.49, 2.5),  # Tjeckien–Mexiko (spelad)
+    54: (0.18, 0.25, 0.57, 2.5),  # Sydafrika–Sydkorea (spelad)
+    55: (0.05, 0.11, 0.84, 2.6),  # Curaçao–Elfenbenskusten
+    56: (0.22, 0.20, 0.58, 2.5),  # Ecuador–Tyskland
+    57: (0.53, 0.26, 0.21, 2.8),  # Japan–Sverige  (Japan favorit – tvärtemot poolens tips)
+    58: (0.04, 0.10, 0.86, 3.3),  # Tunisien–Nederländerna
+    59: (0.27, 0.23, 0.50, 2.3),  # Turkiet–USA
+    60: (0.34, 0.41, 0.25, 2.1),  # Paraguay–Australien
+    61: (0.20, 0.23, 0.57, 2.7),  # Norge–Frankrike
+    62: (0.77, 0.16, 0.07, 2.8),  # Senegal–Irak
+    63: (0.41, 0.27, 0.32, 2.3),  # Kap Verde–Saudiarabien
+    64: (0.14, 0.22, 0.64, 2.7),  # Uruguay–Spanien
+    65: (0.39, 0.36, 0.25, 2.3),  # Egypten–Iran
+    66: (0.09, 0.13, 0.78, 3.1),  # Nya Zeeland–Belgien
+    67: (0.10, 0.17, 0.73, 2.5),  # Panama–England
+    68: (0.54, 0.29, 0.17, 2.4),  # Kroatien–Ghana
+    69: (0.27, 0.29, 0.44, 2.8),  # Colombia–Portugal
+    70: (0.52, 0.25, 0.23, 2.6),  # DR Kongo–Uzbekistan
+    71: (0.24, 0.42, 0.34, 2.4),  # Algeriet–Österrike
+    72: (0.06, 0.15, 0.79, 2.9),  # Jordanien–Argentina
 }
 DEFAULT_EG = 2.7
 
