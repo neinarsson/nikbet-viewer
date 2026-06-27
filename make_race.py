@@ -8,9 +8,9 @@ Helt fristående leverans: skriver ENDAST public/race.html och rör inget annat
 (topplista, dela-bild, notiser påverkas inte). Endast Pythons standardbibliotek.
 
 Rekonstruktion: poäng = antal rätt (gröna boxar) i källans topplista, 1 p/rätt.
-Kumulativa poäng efter varje spelad match → ranking → placering över tid. Vid lika
-poäng rangordnas spelare efter nuvarande tabellplacering (approximation av det
-officiella skiljet, som inte går att rekonstruera exakt per match).
+Kumulativa poäng efter varje spelad match → ranking → placering över tid. Rangordnas
+exakt som källan: poäng (fallande), sedan |gissat totalmål − faktiska mål hittills|
+(stigande), med delade placeringar vid lika.
 """
 
 import os
@@ -86,6 +86,10 @@ def parse_all_players(html):
             continue
         name = norm(strip_tags(cells[2]))
         points = norm(strip_tags(cells[-1]))
+        # Skilje-talet = spelarens gissade totalmål (källans tiebreak bygger på
+        # |gissning − faktiska mål hittills|). Första heltalet i skilje-cellen.
+        mpred = re.match(r"\d+", norm(strip_tags(cells[3])))
+        predicted = int(mpred.group(0)) if mpred else None
         matches = []
         for c in cells[4:-1]:
             if norm(strip_tags(c)) == "":
@@ -98,7 +102,8 @@ def parse_all_players(html):
             else:
                 matches.append("pending")
         players.append(
-            {"order": order, "name": name, "points_str": points, "matches": matches}
+            {"order": order, "name": name, "points_str": points,
+             "predicted": predicted, "matches": matches}
         )
         order += 1
     return players
@@ -127,13 +132,60 @@ def compute_cumulative(players, M):
         p["cum"] = cum
 
 
-def compute_placements(players, M):
+def compute_placements(players, M, goals=None):
+    """Rangordnar som källan: poäng (fallande), sedan |gissat totalmål − faktiska
+    mål hittills| (stigande), med DELADE placeringar (lika nyckel → samma plats,
+    nästa hoppar). Faller tillbaka på (poäng, radordning) om måldata saknas."""
     for p in players:
         p["rank"] = [0] * M
+    actual_cum = []
+    if goals:
+        s = 0
+        for g in goals[:M]:
+            s += g or 0
+            actual_cum.append(s)
+    have_dev = len(actual_cum) >= M
     for mi in range(M):
-        ordered = sorted(players, key=lambda p: (-p["cum"][mi], p["order"]))
-        for rank, p in enumerate(ordered, start=1):
+        if have_dev:
+            actual = actual_cum[mi]
+
+            def keyf(p, a=actual, m=mi):
+                pred = p.get("predicted")
+                dev = abs(pred - a) if pred is not None else 10 ** 9
+                return (-p["cum"][m], dev)
+        else:
+            def keyf(p, m=mi):
+                return (-p["cum"][m], p["order"])
+        ordered = sorted(players, key=keyf)
+        rank = 0
+        prev = None
+        for idx, p in enumerate(ordered):
+            k = keyf(p)
+            if k != prev:
+                rank = idx + 1  # standardrankning: dela placering vid lika nyckel
+                prev = k
             p["rank"][mi] = rank
+
+
+def parse_goals(html):
+    """'Mål'-kolumnen ur matchtabellen → totalmål per spelad match ('2-0' → 2);
+    ospelad → None. Via header-namn (robust mot omordning)."""
+    for t in re.findall(r"<table[^>]*>.*?</table>", html, re.DOTALL):
+        head = t[: t.find("<tbody>")] if "<tbody>" in t else t
+        headers = [norm(strip_tags(h)) for h in re.findall(r"<t[hd][^>]*>(.*?)</t[hd]>", head, re.DOTALL)]
+        if "Mål" not in headers:
+            continue
+        gi = headers.index("Mål")
+        body = t.split("<tbody>", 1)[1] if "<tbody>" in t else t
+        out = []
+        for row in re.findall(r"<tr>.*?</tr>", body, re.DOTALL):
+            cells = re.findall(r"<t[dh][^>]*>(.*?)</t[dh]>", row, re.DOTALL)
+            if len(cells) <= gi:
+                continue
+            mm = re.match(r"(\d+)\s*-\s*(\d+)", norm(strip_tags(cells[gi])))
+            out.append(int(mm.group(1)) + int(mm.group(2)) if mm else None)
+        return out
+    return []
 
 
 def parse_dates(html):
@@ -360,8 +412,7 @@ def render_race_html(players, sel, M, dates):
     <div class="legend">{legend}</div>
     <div class="foot">
       Tunna grå linjer = övriga {N_TOTAL - len(sel)} spelare. Placering 1 överst.
-      Vid lika poäng rangordnas spelare efter nuvarande tabellplacering (en approximation
-      av det officiella skiljet).
+      Delade placeringar som på källan (lika poäng + lika målgissning delar plats).
     </div>
   </div>
   <div class="actions">
@@ -422,7 +473,11 @@ def main():
         print("race: inga matcher spelade – skrev platshållare")
         return
     compute_cumulative(players, M)
-    compute_placements(players, M)
+    try:
+        goals = parse_goals(html)
+    except Exception:
+        goals = None
+    compute_placements(players, M, goals)
     sel = [p for p in players if p["name"].casefold() in selected]
     assign_labels_and_colors(sel)
 
