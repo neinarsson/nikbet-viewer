@@ -57,18 +57,18 @@ ODDS = {
     58: (0.04, 0.10, 0.86, 3.3),  # Tunisien–Nederländerna (spelad)
     59: (0.27, 0.23, 0.50, 2.3),  # Turkiet–USA (spelad)
     60: (0.34, 0.41, 0.25, 2.1),  # Paraguay–Australien (spelad)
-    61: (0.24, 0.19, 0.57, 3.0),  # Norge–Frankrike
-    62: (0.78, 0.15, 0.07, 3.0),  # Senegal–Irak
-    63: (0.37, 0.32, 0.31, 2.6),  # Kap Verde–Saudiarabien
-    64: (0.13, 0.22, 0.65, 2.4),  # Uruguay–Spanien
-    65: (0.39, 0.36, 0.25, 2.1),  # Egypten–Iran
-    66: (0.06, 0.14, 0.80, 2.5),  # Nya Zeeland–Belgien
-    67: (0.05, 0.12, 0.83, 3.0),  # Panama–England
-    68: (0.59, 0.24, 0.17, 2.7),  # Kroatien–Ghana
-    69: (0.28, 0.28, 0.44, 2.3),  # Colombia–Portugal
-    70: (0.55, 0.24, 0.21, 2.3),  # DR Kongo–Uzbekistan
+    61: (0.24, 0.19, 0.57, 3.0),  # Norge–Frankrike (spelad)
+    62: (0.78, 0.15, 0.07, 3.0),  # Senegal–Irak (spelad)
+    63: (0.37, 0.32, 0.31, 2.6),  # Kap Verde–Saudiarabien (spelad)
+    64: (0.13, 0.22, 0.65, 2.4),  # Uruguay–Spanien (spelad)
+    65: (0.39, 0.36, 0.25, 2.1),  # Egypten–Iran (spelad)
+    66: (0.06, 0.14, 0.80, 2.5),  # Nya Zeeland–Belgien (spelad)
+    67: (0.10, 0.17, 0.73, 3.0),  # Panama–England
+    68: (0.54, 0.29, 0.17, 2.3),  # Kroatien–Ghana
+    69: (0.24, 0.25, 0.51, 2.5),  # Colombia–Portugal
+    70: (0.55, 0.23, 0.22, 2.4),  # DR Kongo–Uzbekistan
     71: (0.24, 0.43, 0.33, 2.1),  # Algeriet–Österrike
-    72: (0.06, 0.13, 0.81, 3.2),  # Jordanien–Argentina
+    72: (0.07, 0.13, 0.80, 3.0),  # Jordanien–Argentina
 }
 DEFAULT_EG = 2.7
 
