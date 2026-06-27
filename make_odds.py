@@ -63,12 +63,12 @@ ODDS = {
     64: (0.13, 0.22, 0.65, 2.4),  # Uruguay–Spanien (spelad)
     65: (0.39, 0.36, 0.25, 2.1),  # Egypten–Iran (spelad)
     66: (0.06, 0.14, 0.80, 2.5),  # Nya Zeeland–Belgien (spelad)
-    67: (0.10, 0.17, 0.73, 3.0),  # Panama–England
-    68: (0.54, 0.29, 0.17, 2.3),  # Kroatien–Ghana
-    69: (0.24, 0.25, 0.51, 2.5),  # Colombia–Portugal
-    70: (0.55, 0.23, 0.22, 2.4),  # DR Kongo–Uzbekistan
-    71: (0.24, 0.43, 0.33, 2.1),  # Algeriet–Österrike
-    72: (0.07, 0.13, 0.80, 3.0),  # Jordanien–Argentina
+    67: (0.10, 0.17, 0.73, 2.6),  # Panama–England
+    68: (0.54, 0.29, 0.17, 2.2),  # Kroatien–Ghana
+    69: (0.27, 0.29, 0.44, 2.5),  # Colombia–Portugal
+    70: (0.55, 0.24, 0.21, 2.6),  # DR Kongo–Uzbekistan
+    71: (0.27, 0.35, 0.38, 2.3),  # Algeriet–Österrike
+    72: (0.06, 0.13, 0.81, 3.0),  # Jordanien–Argentina
 }
 DEFAULT_EG = 2.7
 
