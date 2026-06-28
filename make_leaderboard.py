@@ -35,6 +35,13 @@ PREV_STATE_URL = os.environ.get("PREV_STATE_URL", "").strip()
 TITLE = os.environ.get("TITLE", "Fotbollstips VM 2026 – vårt gäng")
 TZ = ZoneInfo("Europe/Stockholm")
 
+# Slutresultat: vilka i gänget som vann pengar (medalj, placering, andel, belopp).
+# Pris­modellen för topp 5 var 50/20/15/10/5 % av potten 11 900 kr.
+PRIZES = {
+    "anton einarsson": ("🥇", "1:a", "50%", "5 950 kr"),
+    "niklas einarsson": ("🥉", "3:a", "15%", "1 785 kr"),
+}
+
 
 def fetch(url: str) -> str:
     req = urllib.request.Request(url, headers={"User-Agent": "nikbet-view/1.0"})
@@ -66,10 +73,22 @@ def load_selected(path):
     return {norm(n).casefold() for n in names}
 
 
+def name_col_index(table_html):
+    """Hitta 'Namn'-kolumnens cellindex via rubriken. Källan tar bort (proj)-
+    kolumnen när turneringen är slut, så index får inte hårdkodas."""
+    head = table_html[: table_html.find("<tbody>")]
+    hcells = re.findall(r"<t[hd][^>]*>(.*?)</t[hd]>", head, re.DOTALL)
+    for i, c in enumerate(hcells):
+        if norm(strip_tags(c)) == "Namn":
+            return i
+    return 2  # äldre layout (med proj-kolumn) som fallback
+
+
 def extract(html, selected):
     m = re.search(
         r'<table class="table table-borderless table-hover.*?</table>', html, re.DOTALL
     )
+    nidx = name_col_index(m.group(0))  # namn-index; skilje = nidx+1; matcher = nidx+2..-1
     body = m.group(0).split("<tbody>", 1)[1]
     people = []
     leader_points = None  # totalledarens poäng (första raden i tabellen)
@@ -79,7 +98,7 @@ def extract(html, selected):
             continue
         # Behåll hela cell-taggen (inkl. bgcolor) så vi kan läsa matchfärgerna.
         cells = re.findall(r"<t[dh][^>]*>.*?</t[dh]>", row, re.DOTALL)
-        if len(cells) < 4:
+        if len(cells) < nidx + 2:
             continue
         pos = norm(strip_tags(cells[0])).rstrip(".")
         if pos and pos != "-":
@@ -88,16 +107,16 @@ def extract(html, selected):
             pos = last_pos  # delad placering – samma som raden ovan
         if leader_points is None:
             leader_points = norm(strip_tags(cells[-1]))  # första raden = totalledaren
-        name = norm(strip_tags(cells[2]))
+        name = norm(strip_tags(cells[nidx]))
         if name.casefold() not in selected:
             continue
         points = norm(strip_tags(cells[-1]))
-        skilje = norm(strip_tags(cells[3]))
-        # Matchcellerna ligger mellan skilje (index 3) och poäng (sista cellen).
+        skilje = norm(strip_tags(cells[nidx + 1]))
+        # Matchcellerna ligger mellan skilje (nidx+1) och poäng (sista cellen).
         # Grön bakgrund = rätt tippad, röd = fel, ofärgad = ännu ej spelad.
         # Tomma celler är avdelare mellan omgångar – hoppa över dem.
         matches = []
-        for c in cells[4:-1]:
+        for c in cells[nidx + 2:-1]:
             if norm(strip_tags(c)) == "":
                 continue
             lc = c.lower()
@@ -137,12 +156,15 @@ def extract_results(html):
 def render_html(people, leader_points=None):
     blocks = []
     for p in people:
+        prize = PRIZES.get(p["name"].casefold())
+        cls = "person win" if prize else "person"
+        medal = f'<span class="medal">{prize[0]}</span>' if prize else ""
         boxes = "".join(f'<span class="{m}"></span>' for m in p.get("matches", []))
         blocks.append(
-            f"""      <div class="person">
+            f"""      <div class="{cls}">
         <div class="prow">
           <span class="rank">{H.escape(p['pos'])}</span>
-          <span class="name">{H.escape(first_name(p['name']))}</span>
+          <span class="name">{medal}{H.escape(first_name(p['name']))}</span>
           <span class="dif">{H.escape(p['skilje'])}</span>
           <span class="pts">{H.escape(p['points'])}<i>p</i></span>
         </div>
@@ -156,13 +178,31 @@ def render_html(people, leader_points=None):
         (sum(1 for m in p.get("matches", []) if m != "pending") for p in people),
         default=0,
     )
-    # Rad 2 i underrubriken: totalledare + matcher spelade (egen rad = snyggare).
-    meta = [f"Uppd. {updated}"]
-    if total:
-        meta.append(f"{played}/{total} spelade")
-    if leader_points:
-        meta.append(f"ledaren {H.escape(leader_points)} p")
-    submeta = " · ".join(meta)
+    is_final = total and played >= total
+
+    # Prisbanner (guld) – lyfter fram gängets vinster. Visas bara om någon vann.
+    winners = [(first_name(p["name"]), PRIZES[p["name"].casefold()]) for p in people
+               if p["name"].casefold() in PRIZES]
+    prize_banner = ""
+    if winners:
+        items = "".join(
+            f'<div class="pwin"><span class="pm">{m}</span>'
+            f'<span class="pn">{H.escape(fn)}</span>'
+            f'<span class="pp">{place} totalt · {pct}</span>'
+            f'<span class="pa">{amount}</span></div>'
+            for fn, (m, place, pct, amount) in winners
+        )
+        prize_banner = f'    <div class="prizes"><div class="ptitle">🏆 Vårt gäng tog hem pengar</div>{items}</div>\n'
+
+    if is_final:
+        submeta = f"🏆 Slutresultat · {played}/{total} spelade"
+    else:
+        meta = [f"Uppd. {updated}"]
+        if total:
+            meta.append(f"{played}/{total} spelade")
+        if leader_points:
+            meta.append(f"ledaren {H.escape(leader_points)} p")
+        submeta = " · ".join(meta)
     seg_w = f"calc(100% / {total})" if total else "0"
     return f"""<!DOCTYPE html>
 <html lang="sv">
@@ -192,6 +232,15 @@ def render_html(people, leader_points=None):
   .dif {{ flex:none; font-size:10px; color:var(--muted); }}
   .pts {{ flex:none; font-weight:800; font-size:14px; }}
   .pts i {{ font-style:normal; font-size:9px; font-weight:600; color:var(--muted); margin-left:1px; }}
+  .medal {{ margin-right:4px; }}
+  .person.win {{ background:linear-gradient(90deg,#fff7df,rgba(255,247,223,0)); }}
+  .prizes {{ background:linear-gradient(135deg,#fff3cf,#ffe09a); border-bottom:1px solid #f0d98a; padding:10px 15px 11px; }}
+  .prizes .ptitle {{ font-size:12px; font-weight:800; color:#8a6a14; letter-spacing:.02em; margin-bottom:7px; }}
+  .pwin {{ display:flex; align-items:center; gap:9px; padding:3px 0; }}
+  .pwin .pm {{ font-size:18px; flex:none; line-height:1; }}
+  .pwin .pn {{ font-weight:800; font-size:14px; color:#5c4708; flex:none; }}
+  .pwin .pp {{ font-size:11px; color:#9a7d2e; flex:1; }}
+  .pwin .pa {{ font-weight:800; font-size:15px; color:#7a5e0a; flex:none; }}
   .track {{ margin-top:3px; height:10px; border-radius:2px; overflow:hidden;
            background:var(--pending); white-space:nowrap; font-size:0; }}
   .track span {{ display:inline-block; vertical-align:top; width:{seg_w}; height:10px;
@@ -222,7 +271,7 @@ def render_html(people, leader_points=None):
       <h1>{H.escape(TITLE)}</h1>
       <div class="sub">{submeta}</div>
     </div>
-{rows}
+{prize_banner}{rows}
     <div class="foot">
       <span class="lg"><i class="hit"></i>rätt</span>
       <span class="lg"><i class="miss"></i>fel</span>

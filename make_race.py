@@ -69,12 +69,24 @@ def load_selected(path):
     return {norm(n).casefold() for n in names}
 
 
+def name_col_index(table_html):
+    """'Namn'-kolumnens cellindex via rubriken (källan tar bort (proj)-kolumnen
+    när turneringen är slut, så index får inte hårdkodas)."""
+    head = table_html[: table_html.find("<tbody>")]
+    hcells = re.findall(r"<t[hd][^>]*>(.*?)</t[hd]>", head, re.DOTALL)
+    for i, c in enumerate(hcells):
+        if norm(strip_tags(c)) == "Namn":
+            return i
+    return 2
+
+
 def parse_all_players(html):
     """Alla 119 spelare ur topplistan (tabell 0), i nuvarande tabellordning.
     Återanvänder samma cell-/färglogik som make_leaderboard.extract()."""
     m = re.search(
         r'<table class="table table-borderless table-hover.*?</table>', html, re.DOTALL
     )
+    nidx = name_col_index(m.group(0))  # namn=nidx, skilje=nidx+1, matcher=nidx+2..-1
     body = m.group(0).split("<tbody>", 1)[1]
     players = []
     order = 0
@@ -82,16 +94,16 @@ def parse_all_players(html):
         if 'scope="row"' not in row:
             continue
         cells = re.findall(r"<t[dh][^>]*>.*?</t[dh]>", row, re.DOTALL)  # hela cell-taggar
-        if len(cells) < 4:
+        if len(cells) < nidx + 2:
             continue
-        name = norm(strip_tags(cells[2]))
+        name = norm(strip_tags(cells[nidx]))
         points = norm(strip_tags(cells[-1]))
         # Skilje-talet = spelarens gissade totalmål (källans tiebreak bygger på
         # |gissning − faktiska mål hittills|). Första heltalet i skilje-cellen.
-        mpred = re.match(r"\d+", norm(strip_tags(cells[3])))
+        mpred = re.match(r"\d+", norm(strip_tags(cells[nidx + 1])))
         predicted = int(mpred.group(0)) if mpred else None
         matches = []
-        for c in cells[4:-1]:
+        for c in cells[nidx + 2:-1]:
             if norm(strip_tags(c)) == "":
                 continue  # avdelarcell mellan omgångar
             lc = c.lower()
