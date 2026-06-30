@@ -11,9 +11,11 @@
 name: Publicera topplista
 
 on:
-  schedule:
-    - cron: "*/30 * * * *" # var 30:e minut (UTC)
-  workflow_dispatch: {} # manuell körning från Actions-fliken
+  # Schemalagd körning avstängd – VM 2026 är slut, ställningen ändras inte mer.
+  # (Sidan ligger kvar på Pages oavsett.) Avkommentera för att återuppta.
+  # schedule:
+  #   - cron: "*/30 * * * *"
+  workflow_dispatch: {} # manuell körning från Actions-fliken vid behov
   push:
     branches: [main]
 
